@@ -1,0 +1,23 @@
+- Clean up and implement classes
+    - ButtonHandler
+    - Display
+    - Games
+    - Strip
+
+- Keep making games
+    - Pingpong
+        - Keep track of scoring or lives
+        - If one dies you could get a bigger part of the board
+    - Riding solo (proper drinking/social game)
+        - Description:
+            - Everyone holds their button down and presses the 
+            white button. 
+            - The game starts and the ring is a timer.
+            - During the timer, the players discuss if they are 
+            releasing or not. 
+            - When the time is up you either release
+            the button or you don't.
+                - If you are the only one releasing/holding you 
+                drink
+                - If everyone releases/holds, everyone drinks
+                - If equal amount, no one drinks

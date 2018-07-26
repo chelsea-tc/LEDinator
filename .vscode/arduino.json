@@ -1,6 +1,6 @@
 {
     "board": "arduino:avr:nano",
     "configuration": "cpu=atmega328",
-    "sketch": "AIO_LEDinatorVersion2olle.ino",
+    "sketch": "LEDinator.ino",
     "port": "COM4"
 }
