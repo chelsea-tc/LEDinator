@@ -11,10 +11,10 @@
 /*
 	PIN defines
 */
-const int BUTTONS[6] = {4, 5, 6, 7, 8, 9};
-const int MENU_BUTTONS[4] = {A0, A1, A2, A3};
-const int LEDs = 60;
-const int PIXEL_PIN = 10, INTERRUPT_PIN = 2;
+const byte BUTTONS[6] = {4, 5, 6, 7, 8, 9};
+const byte MENU_BUTTONS[4] = {A0, A1, A2, A3};
+const byte LEDs = 60;
+const byte PIXEL_PIN = 10, INTERRUPT_PIN = 2;
 
 /*
 	General game variables
@@ -39,22 +39,13 @@ GFButton button_objects[6] = {buttonRed, buttonGreen, buttonBlue, buttonYellow, 
 /*
 	Setting the strip
 */
-static const int RED = 0, GREEN = 1, BLUE = 2, YELLOW = 3, BLACK = 4, WHITE = 5;
-static const int UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3;
-static const int OFF = 0, LOW_INTENSITY = 7, MEDIUM_INTENSITY = 25, HIGH_INTENSITY = 255;
+static const byte RED = 0, GREEN = 1, BLUE = 2, YELLOW = 3, BLACK = 4, WHITE = 5;
+static const byte UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3;
+static const byte OFF = 0, LOW_INTENSITY = 7, MEDIUM_INTENSITY = 25, HIGH_INTENSITY = 255;
 
 Adafruit_NeoPixel strip;
-//volatile int color_intensity = 10;
-//volatile uint32_t red_c = strip.Color(color_intensity, 0, 0);
-//volatile uint32_t blue_c = strip.Color(0, color_intensity, 0);
-//volatile uint32_t green_c = strip.Color(0, 0, color_intensity);
-//volatile uint32_t yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
-//volatile uint32_t low_white_c = strip.Color(LOW_INTENSITY, LOW_INTENSITY, LOW_INTENSITY);
-//volatile uint32_t medium_white_c = strip.Color(MEDIUM_INTENSITY, MEDIUM_INTENSITY, MEDIUM_INTENSITY);
-//volatile uint32_t high_white_c = strip.Color(HIGH_INTENSITY, HIGH_INTENSITY, HIGH_INTENSITY);
-//volatile uint32_t off_c = strip.Color(0, 0, 0);
 
-volatile int color_intensity;
+volatile byte color_intensity;
 volatile uint32_t red_c;
 volatile uint32_t blue_c;
 volatile uint32_t green_c;
@@ -69,9 +60,9 @@ volatile uint32_t off_c;
 ******************************************
 */
 
-void read_buttons(volatile bool *buttons, int amount)
+void read_buttons(volatile bool *buttons, byte amount)
 {
-  for (int i = 0; i < amount; ++i)
+  for (byte i = 0; i < amount; ++i)
   {
     if (button_objects[i].wasPressed())
     {
@@ -80,7 +71,7 @@ void read_buttons(volatile bool *buttons, int amount)
   }
 }
 
-void read_menu_buttons(volatile bool *buttons, int amount)
+void read_menu_buttons(volatile bool *buttons, byte amount)
 {
   if (!digitalRead(A0))
   {
@@ -103,17 +94,17 @@ void read_menu_buttons(volatile bool *buttons, int amount)
   }
 }
 
-void clear_buttons(volatile bool *buttons, int amount)
+void clear_buttons(volatile bool *buttons, byte amount)
 {
-  for (int i = 0; i < amount; ++i)
+  for (byte i = 0; i < amount; ++i)
   {
     buttons[i] = false;
   }
 }
 
-void clear_menu_buttons(volatile bool *buttons, int amount)
+void clear_menu_buttons(volatile bool *buttons, byte amount)
 {
-  for (int i = 0; i < amount; ++i)
+  for (byte i = 0; i < amount; ++i)
   {
     buttons[i] = false;
   }
@@ -127,14 +118,14 @@ void clear_menu_buttons(volatile bool *buttons, int amount)
 
 void set_all_to_color(uint32_t color)
 {
-  for (int i = 0; i < LEDs; ++i)
+  for (byte i = 0; i < LEDs; ++i)
   {
     strip.setPixelColor(i, color);
   }
   strip.show();
 }
 
-void set_all_to(const int &color)
+void set_all_to(const byte &color)
 {
   switch (color)
   {
@@ -161,13 +152,13 @@ void set_all_off()
   set_all_to_color(off_c);
 }
 
-void set_one_to_color(int i, uint32_t color)
+void set_one_to_color(byte i, uint32_t color)
 {
   strip.setPixelColor(i, color);
   strip.show();
 }
 
-void set_one_to(int i, const int &color)
+void set_one_to(byte i, const byte &color)
 {
   switch (color)
   {
@@ -194,9 +185,9 @@ void set_one_to(int i, const int &color)
   }
 }
 
-void blink_all_color(int times, int delay_time, int color)
+void blink_all_color(int times, int delay_time, uint32_t color)
 {
-  for (int i = 0; i < times; ++i)
+  for (byte i = 0; i < times; ++i)
   {
     set_all_to(color);
     delay(delay_time / 2);
@@ -205,9 +196,9 @@ void blink_all_color(int times, int delay_time, int color)
   }
 }
 
-void blink_all(int times, int delay_time, const int &color)
+void blink_all(int times, int delay_time, const byte &color)
 {
-  for (int i = 0; i < times; ++i)
+  for (byte i = 0; i < times; ++i)
   {
     switch (color)
     {
@@ -234,7 +225,7 @@ void blink_all(int times, int delay_time, const int &color)
 
 void set_button_color_zones(int delay_time)
 {
-  for (int i = 0; i < LEDs; ++i)
+  for (byte i = 0; i < LEDs; ++i)
   {
     set_one_to(i, i / 15);
     delay(delay_time);
@@ -256,9 +247,9 @@ void start_spinning();
 /*
 	Local variables
 */
-static const int player_area = 5;
-int offset = 5;
-int position = 0;
+static const byte player_area = 5;
+byte offset = 5;
+byte position = 0;
 bool button_states[6];
 bool playing[4];
 bool hit[4];
@@ -287,13 +278,13 @@ void setup()
 
 void opt_in()
 {
-  for (int i = 0; i < 6; ++i)
+  for (byte i = 0; i < 6; ++i)
   {
     if (i < 4 && button_states[i])
     {
-      int start = offset + 15 * i - player_area / 2;
-      int end = offset + 15 * i + player_area - player_area / 2;
-      for (int i = start; i < end; ++i)
+      byte start = offset + 15 * i - player_area / 2;
+      byte end = offset + 15 * i + player_area - player_area / 2;
+      for (byte i = start; i < end; ++i)
       {
         strip.setPixelColor(i, blue_c);
         delay(200);
@@ -307,7 +298,7 @@ void opt_in()
 
 void start_spinning()
 {
-  for (int i = 0; i < 4; ++i)
+  for (byte i = 0; i < 4; ++i)
   {
     if (playing[i])
       hit[i] = false;
@@ -315,10 +306,10 @@ void start_spinning()
       hit[i] = true;
   }
   uint32_t old_color;
-  int player_counter = 0;
+  byte player_counter = 0;
   while (!game_ended)
   {
-    for (int position = 0; position < LEDs && !game_ended; ++position)
+    for (byte position = 0; position < LEDs && !game_ended; ++position)
     {
       old_color = strip.getPixelColor(position);
       set_one_to(position, red_c);
@@ -380,7 +371,7 @@ void game_reaction_time()
     start_animation_reaction();
     game_ended = false;
     delay(random(7000) + 3000);
-    for (int i = 0; i < 6; ++i)
+    for (byte i = 0; i < 6; ++i)
     {
       if (button_states[i])
       {
@@ -395,7 +386,7 @@ void game_reaction_time()
       read_buttons(button_states, 6);
       if (button_states[BLACK])
         return;
-      for (int i = 0; i < 6; ++i)
+      for (byte i = 0; i < 6; ++i)
       {
         if (button_states[i])
         {
@@ -412,7 +403,7 @@ void game_reaction_time()
       read_buttons(button_states, 6);
       if (button_states[BLACK])
         return;
-      for (int i = 0; i < 6; ++i)
+      for (byte i = 0; i < 6; ++i)
       {
         if (button_states[i] != 0)
         {
@@ -425,14 +416,14 @@ void game_reaction_time()
 
 void start_animation_reaction()
 {
-  for (int i = 0; i < LEDs; ++i)
+  for (byte i = 0; i < LEDs; ++i)
   {
     strip.setPixelColor(i, low_white_c);
     strip.show();
     delay(600 / 30);
   }
 
-  for (int i = 200; i > 0; i -= 10)
+  for (byte i = 200; i > 0; i -= 10)
   {
     set_all_to_color(low_white_c);
     delay(i);
@@ -455,7 +446,7 @@ namespace memory
 void setup();
 void quit();
 void play();
-void end_game(int);
+void end_game(byte);
 void game_won();
 
 /*
@@ -466,15 +457,15 @@ int showing_time = 5000;
 void game_memory()
 {
   set_all_off();
-  int round = 3;
-  int color_order[round];
+  byte round = 3;
+  byte color_order[round];
   for (;round < LEDs - 1; round += 3 )
   {
     Serial.println("Setting up memory");
     game_ended = false;
-    for (int i = 0; i < round; ++i)
+    for (byte i = 0; i < round; ++i)
     {
-      int rand = random(3);
+      byte rand = random(3);
       set_one_to(i, rand);
       color_order[i] = rand;
       strip.show();
@@ -486,8 +477,8 @@ void game_memory()
     set_all_off();
     Serial.println("Memory setup done");
     Serial.println("Playing memory");
-    int last_button_pressed = -1;
-    for (int i = 0; i < round; ++i)
+    byte last_button_pressed = -1;
+    for (byte i = 0; i < round; ++i)
     {
       Serial.print("LED number : ");
       Serial.println(i);
@@ -496,7 +487,7 @@ void game_memory()
       while (!pressed)
       {
         read_buttons(buttons, 6);
-        for (int j = 0; j < 6; ++j)
+        for (byte j = 0; j < 6; ++j)
         {
           if (buttons[j])
           {
@@ -506,7 +497,7 @@ void game_memory()
           }
         }
       }
-      for (int j = 0; true; j = (j + 1) % 6)
+      for (byte j = 0; true; j = (j + 1) % 6)
       {
         if (buttons[j])
         {
@@ -539,10 +530,10 @@ void game_memory()
   game_won();
 }
 
-void end_game(int round)
+void end_game(byte round)
 {
   blink_all(10, 50, RED);
-  for(int i = 0; i < round; ++i){
+  for(byte i = 0; i < round; ++i){
     if((i+1)%5)
       set_one_to(i, RED);
     else
@@ -554,7 +545,7 @@ void end_game(int round)
 void game_won()
 {
   set_all_off();
-  for (int i = 0; i < LEDs; ++i)
+  for (byte i = 0; i < LEDs; ++i)
   {
     set_one_to(i, GREEN);
     delay(500 / 60);
@@ -603,7 +594,7 @@ void setup()
 {
   Serial.println("Setting up pingpong");
   game_ended = false;
-  for (int i = 0; i < LEDs; ++i)
+  for (byte i = 0; i < LEDs; ++i)
   {
     set_one_to(i, RED);
     delay(5);
@@ -625,7 +616,7 @@ void play()
   long delay_ball = 300;
   int dir = 1;
   bool pointlost = false;
-  int loseonpos = pos + 15;
+  byte loseonpos = pos + 15;
   loseonpos = loseonpos > 59 ? loseonpos % 60 : loseonpos;
   loseonpos = loseonpos < 0 ? loseonpos + 60 : loseonpos;
   long stamp;
@@ -667,14 +658,14 @@ void play()
         pointlost = true;
         if (!pos && dir)
         {
-          for (int k = 0; k < 10; ++k)
+          for (byte k = 0; k < 10; ++k)
           {
-            for (int i = 0; i < 15; ++i)
+            for (byte i = 0; i < 15; ++i)
             {
               set_one_to((45 + i), RED);
             }
             delay(40);
-            for (int i = 0; i < 15; ++i)
+            for (byte i = 0; i < 15; ++i)
             {
               set_one_to((45 + i), BLACK);
             }
@@ -683,14 +674,14 @@ void play()
         }
         else
         {
-          for (int k = 0; k < 10; ++k)
+          for (byte k = 0; k < 10; ++k)
           {
-            for (int i = 0; i < 15; ++i)
+            for (byte i = 0; i < 15; ++i)
             {
               set_one_to((pos - i * dir - dir) % 60, RED);
             }
             delay(40);
-            for (int i = 0; i < 15; ++i)
+            for (byte i = 0; i < 15; ++i)
             {
               set_one_to((pos - i * dir - dir) % 60, BLACK);
             }
@@ -746,7 +737,7 @@ void end_game()
 void game_won()
 {
   set_all_off();
-  for (int i = 0; i < LEDs; ++i)
+  for (byte i = 0; i < LEDs; ++i)
   {
     set_one_to(i, GREEN);
     delay(1000 / 60);
@@ -794,7 +785,7 @@ void setup()
   strip = Adafruit_NeoPixel(LEDs, PIXEL_PIN, NEO_BRGW + NEO_KHZ800);
   game_ended = false;
   strip.begin();
-  for (int i = 0; i < strip.numPixels(); i++)
+  for (byte i = 0; i < strip.numPixels(); i++)
   {
     strip.setPixelColor(i, low_white_c);
     delay(5);
@@ -831,7 +822,7 @@ void loop()
     random(10);
     if (snake_counter % 10 == 0)
     {
-      for (int i = 0; i < 10; ++i)
+      for (byte i = 0; i < 10; ++i)
       {
         strip.setPixelColor((snake_counter / 10 + i) % LEDs, i * 1, i * 1, i * 1);
       }
@@ -839,7 +830,7 @@ void loop()
     ++snake_counter;
     strip.show();
     read_buttons(buttons, 6);
-    for (int i = 0; i < 6; ++i)
+    for (byte i = 0; i < 6; ++i)
     {
       if (buttons[i])
       {
@@ -862,7 +853,7 @@ void loop()
         blink_all(5, 200, GREEN);
       }
       read_menu_buttons(menu_buttons, 4);
-      for (int i = 0; i < 4; ++i)
+      for (byte i = 0; i < 4; ++i)
       {
         if (menu_buttons[i])
         {
