@@ -311,9 +311,10 @@ void repaint_games(short row)
   lcd.print("     **********     ");
 }
 
-void repaint_brightness(){
+void repaint_brightness()
+{
   lcd.clear();
-  lcd.setCursor(0,0);
+  lcd.setCursor(0, 0);
   lcd.print("Brightness settings");
   lcd.setCursor(0, 1);
   lcd.print("Up to inc");
@@ -561,26 +562,42 @@ void game_won();
 /*
   Local variables
 */
-int showing_time = 5000;
+int showing_time = 2000;
+
+void setup()
+{
+  set_all_off();
+}
+
+void repaint_memory(int round)
+{
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print("       Memory");
+  lcd.setCursor(0, 2);
+  lcd.print("      Level " + String(round));
+}
 
 void game_memory()
 {
-  set_all_off();
-  byte round = 3;
-  byte color_order[round];
-  for (; round < LEDs - 1; round += 3)
+  setup();
+  int round = 5;
+  for (; round < LEDs - 1; round += 1)
   {
+    int color_order[round];
+    repaint_memory(round);
     game_ended = false;
+    set_all_off();
     for (byte i = 0; i < round; ++i)
     {
-      byte rand = random(3);
+      byte rand = random(4);
       set_one_to(i, rand);
       color_order[i] = rand;
       strip.show();
     }
-    delay(showing_time + round * 00);
+    delay(showing_time + round * 1000);
     set_all_off();
-    byte last_button_pressed = -1;
+    short last_button_pressed = -1;
     for (byte i = 0; i < round; ++i)
     {
       bool buttons[6] = {0, 0, 0, 0, 0, 0};
@@ -592,6 +609,7 @@ void game_memory()
         {
           if (buttons[j])
           {
+            Serial.println(j);
             pressed = true;
             break;
           }
@@ -667,12 +685,17 @@ namespace pingpong
 void setup();
 void quit();
 void play();
+void display_score();
 void end_game();
 void game_won();
 
 /*
   Local variables
 */
+byte redlosses = 0;
+byte greenlosses = 0;
+byte bluelosses = 0;
+byte yellowlosses = 0;
 
 void game_pingpong()
 {
@@ -690,16 +713,16 @@ void setup()
   }
   blink_all(10, 50, RED);
   set_button_color_zones(15);
+  lcd.clear();
+  lcd.setCursor(6, 1);
+  lcd.print("Pingpong");
 }
 
 void play()
 {
+  display_score();
   byte player_start = random(4);
   char pos = player_start * 15;
-  byte redlosses = 0;
-  byte greenlosses = 0;
-  byte bluelosses = 0;
-  byte yellowlosses = 0;
   long delay_ball = 300;
   int dir = 1;
   bool pointlost = false;
@@ -712,6 +735,7 @@ void play()
   while (!game_ended)
   {
     set_button_color_zones(15);
+    display_score();
     while (!pointlost)
     {
       oldcolor = strip.getPixelColor(pos);
@@ -777,9 +801,8 @@ void play()
             }
             delay(40);
           }
-          //blink_all(10, 100, RED);
         }
-        switch (pos / 15)
+        switch (pos == 0 ? YELLOW : dir < 0 ? (pos + 7) / 15 : (pos - 7) / 15)
         {
         case RED:
           redlosses += 1;
@@ -793,6 +816,9 @@ void play()
         case YELLOW:
           yellowlosses += 1;
           break;
+        default:
+          redlosses += 1;
+          break;
         }
       }
     }
@@ -804,6 +830,18 @@ void play()
     loseonpos = loseonpos > 59 ? loseonpos % 60 : loseonpos;
     loseonpos = loseonpos < 0 ? loseonpos + 60 : loseonpos;
   }
+}
+
+void display_score()
+{
+  lcd.setCursor(0, 0);
+  lcd.print(bluelosses);
+  greenlosses < 10 ? lcd.setCursor(19, 0) : lcd.setCursor(18, 0);
+  lcd.print(greenlosses);
+  lcd.setCursor(0, 3);
+  lcd.print(yellowlosses);
+  redlosses < 10 ? lcd.setCursor(19, 3) : lcd.setCursor(18, 3);
+  lcd.print(redlosses);
 }
 
 void end_game()
@@ -866,9 +904,6 @@ void loop()
   switch (menu::main_menu())
   {
   case 0:
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Playing: Memory");
     memory::game_memory();
     break;
   case 1:
