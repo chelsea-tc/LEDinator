@@ -7,6 +7,7 @@
 */
 #include "Adafruit_NeoPixel.h"
 #include "GFButton.h"
+#include "LiquidCrystal_I2C.h"
 
 /*
 	PIN defines
@@ -17,9 +18,14 @@ const byte LEDs = 60;
 const byte PIXEL_PIN = 10, INTERRUPT_PIN = 2;
 
 /*
-	General game variables
+	Global variables
 */
 bool game_ended;
+
+/*
+  The LCD
+*/
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 // Create two button instances on pins 2 & 3
 GFButton buttonRed(4);
@@ -28,24 +34,24 @@ GFButton buttonBlue(6);
 GFButton buttonYellow(7);
 GFButton buttonWhite(8);
 GFButton buttonBlack(9);
-//GFButton buttonUp(A0);
-//GFButton buttonLeft(A1);
-//GFButton buttonDown(A2);
-//GFButton buttonRight(A3);
+GFButton buttonUp(A0);
+GFButton buttonLeft(A1);
+GFButton buttonDown(A2);
+GFButton buttonRight(A3);
 
 GFButton button_objects[6] = {buttonRed, buttonGreen, buttonBlue, buttonYellow, buttonWhite, buttonBlack};
-//GFButton menu_button_objects[4] = {buttonUp, buttonLeft, buttonDown, buttonDown};
+GFButton menu_button_objects[4] = {buttonUp, buttonLeft, buttonDown, buttonRight};
 
 /*
 	Setting the strip
 */
-static const byte RED = 0, GREEN = 1, BLUE = 2, YELLOW = 3, BLACK = 4, WHITE = 5;
+static const byte RED = 0, GREEN = 1, BLUE = 2, YELLOW = 3, WHITE = 4, BLACK = 5;
 static const byte UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3;
 static const byte OFF = 0, LOW_INTENSITY = 7, MEDIUM_INTENSITY = 25, HIGH_INTENSITY = 255;
 
 Adafruit_NeoPixel strip;
 
-volatile byte color_intensity;
+volatile signed short color_intensity;
 volatile uint32_t red_c;
 volatile uint32_t blue_c;
 volatile uint32_t green_c;
@@ -73,36 +79,52 @@ void read_buttons(volatile bool *buttons, byte amount)
 
 void read_menu_buttons(volatile bool *buttons, byte amount)
 {
-  if (!digitalRead(A0))
+  for (byte i = 0; i < amount; ++i)
   {
-    buttons[0] = true;
+    if (menu_button_objects[i].wasPressed())
+    {
+      buttons[i] = true;
+    }
   }
+}
 
-  if (!digitalRead(A1))
+void read_held_buttons(volatile bool *buttons, byte amount)
+{
+  for (byte i = 0; i < amount; ++i)
   {
-    buttons[1] = true;
+    if (button_objects[i].isPressed())
+    {
+      buttons[i] = true;
+    }
   }
+}
 
-  if (!digitalRead(A2))
+byte get_last_pressed_menu_button(bool *menu_buttons)
+{
+  read_menu_buttons(menu_buttons, 4);
+  for (short i = 0; i < 4; ++i)
   {
-    buttons[2] = true;
+    if (menu_buttons[i])
+    {
+      clear_buttons(menu_buttons, 4);
+      return i;
+    }
   }
+  return -1;
+}
 
-  if (!digitalRead(A3))
+void read_held_menu_buttons(volatile bool *buttons, byte amount)
+{
+  for (byte i = 0; i < amount; ++i)
   {
-    buttons[3] = true;
+    if (menu_button_objects[i].isPressed())
+    {
+      buttons[i] = true;
+    }
   }
 }
 
 void clear_buttons(volatile bool *buttons, byte amount)
-{
-  for (byte i = 0; i < amount; ++i)
-  {
-    buttons[i] = false;
-  }
-}
-
-void clear_menu_buttons(volatile bool *buttons, byte amount)
 {
   for (byte i = 0; i < amount; ++i)
   {
@@ -231,115 +253,192 @@ void set_button_color_zones(int delay_time)
     delay(delay_time);
   }
 }
-/*
-	********************************
-	Spinning LED
-	********************************
-*/
-namespace spinning_LED
-{
-/*
-	Local function declaration
-*/
-void setup();
-void opt_in();
-void start_spinning();
-/*
-	Local variables
-*/
-static const byte player_area = 5;
-byte offset = 5;
-byte position = 0;
-bool button_states[6];
-bool playing[4];
-bool hit[4];
 
-void game_spinning_LED()
+/*
+	*********************************
+  Menu handling
+  *********************************
+*/
+namespace menu
 {
-  setup();
-  start_spinning();
+/*
+  Local functions
+*/
+void repaint_main(short);
+void repaint_games(short);
+void repaint_brightness();
+short main_menu();
+short games_menu();
+void brightness_menu();
+
+/*
+  Local variables
+*/
+bool menu_buttons[4] = {0, 0, 0, 0};
+short row = 0;
+short column = 0;
+const byte amount_of_main = 2;
+String main[amount_of_main] = {"       Games",
+                               "     Brightness"};
+const byte amount_of_games = 3;
+String games[amount_of_games] = {"       Memory",
+                                 "      Reaction",
+                                 "      Pingpong"};
+
+void repaint_main(short row)
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("     **********     ");
+  lcd.setCursor(0, 1);
+  lcd.print("     Main menu");
+  lcd.setCursor(0, 2);
+  lcd.print(main[row]);
+  lcd.setCursor(0, 3);
+  lcd.print("     **********     ");
 }
 
-void setup()
+void repaint_games(short row)
 {
-  set_all_to_color(yellow_c);
-  read_buttons(button_states, 6);
-  while (!button_states[BLACK] && !button_states[WHITE])
-  {
-    read_buttons(button_states, 6);
-    if (button_states[BLACK])
-    {
-      set_all_off();
-      return;
-    }
-  }
-  opt_in();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("     **********     ");
+  lcd.setCursor(0, 1);
+  lcd.print("     Games menu");
+  lcd.setCursor(0, 2);
+  lcd.print(games[row]);
+  lcd.setCursor(0, 3);
+  lcd.print("     **********     ");
 }
 
-void opt_in()
+void repaint_brightness(){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Brightness settings");
+  lcd.setCursor(0, 1);
+  lcd.print("Up to inc");
+  lcd.setCursor(0, 2);
+  lcd.print("Down to dec");
+  lcd.setCursor(0, 3);
+  lcd.print("Left to go back");
+}
+
+short main_menu()
 {
-  for (byte i = 0; i < 6; ++i)
+  repaint_main(0);
+  row = 0;
+  while (true)
   {
-    if (i < 4 && button_states[i])
+    set_all_off();
+
+    switch (get_last_pressed_menu_button(menu_buttons))
     {
-      byte start = offset + 15 * i - player_area / 2;
-      byte end = offset + 15 * i + player_area - player_area / 2;
-      for (byte i = start; i < end; ++i)
+    case UP:
+      if (row > 0)
+        row -= 1;
+      repaint_main(row);
+      break;
+    case DOWN:
+      if (row < amount_of_main - 1)
+        row += 1;
+      repaint_main(row);
+      break;
+    case LEFT:
+      break;
+    case RIGHT:
+      switch (row)
       {
-        strip.setPixelColor(i, blue_c);
-        delay(200);
-        strip.show();
-        //(i >= 0) ? strip.setPixelColor(i, blue_c) : strip.setPixelColor(i + 60, blue_c);
+      case 0:
+        return games_menu();
+        break;
+      case 1:
+        brightness_menu();
+        repaint_main(row);
+        break;
       }
-      playing[i] = true;
+      break;
     }
   }
 }
 
-void start_spinning()
+short games_menu()
 {
-  for (byte i = 0; i < 4; ++i)
+  row = 0;
+  repaint_games(0);
+  while (true)
   {
-    if (playing[i])
-      hit[i] = false;
-    else
-      hit[i] = true;
-  }
-  uint32_t old_color;
-  byte player_counter = 0;
-  while (!game_ended)
-  {
-    for (byte position = 0; position < LEDs && !game_ended; ++position)
-    {
-      old_color = strip.getPixelColor(position);
-      set_one_to(position, red_c);
+    set_all_off();
 
-      // If the LED right after the player area is lit, check if player has pushed the button
-      if (player_counter * 15 + offset + player_area == position)
+    switch (get_last_pressed_menu_button(menu_buttons))
+    {
+    case UP:
+      if (row > 0)
+        row -= 1;
+      repaint_games(row);
+      break;
+    case DOWN:
+      if (row < amount_of_games - 1)
+        row += 1;
+      repaint_games(row);
+      break;
+    case LEFT:
+      return -1;
+      break;
+    case RIGHT:
+      return row;
+      break;
+    }
+  }
+}
+
+void brightness_menu()
+{
+  repaint_brightness();
+  while (true)
+  {
+    read_held_menu_buttons(menu_buttons, 4);
+    for (byte i = 0; i < 4; ++i)
+    {
+      if (menu_buttons[i])
       {
-        if (playing[player_counter])
+        clear_buttons(menu_buttons, 4);
+        switch (i)
         {
-          if (hit[player_counter])
-            hit[player_counter] = false;
-          else
+        case UP:
+          color_intensity += 2;
+          if (color_intensity > 255)
           {
-            set_all_to(player_counter);
-            game_ended = true;
+            color_intensity = 255;
           }
+          red_c = strip.Color(color_intensity, 0, 0);
+          blue_c = strip.Color(0, color_intensity, 0);
+          green_c = strip.Color(0, 0, color_intensity);
+          yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
+          set_button_color_zones(0);
+          break;
+        case DOWN:
+          color_intensity -= 2;
+          if (color_intensity < 1)
+          {
+            color_intensity = 2;
+          }
+          red_c = strip.Color(color_intensity, 0, 0);
+          blue_c = strip.Color(0, color_intensity, 0);
+          green_c = strip.Color(0, 0, color_intensity);
+          yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
+          set_button_color_zones(0);
+          break;
+        case LEFT:
+          return;
+          break;
+        case RIGHT:
+          break;
         }
-        player_counter = (player_counter + 1) % 4;
       }
-
-      // Delay and speed up the spinning every X step
-      delay(300 - position / 5);
-
-      // Repaint the old pixel
-      set_one_to_color(position, old_color);
     }
   }
 }
-
-} // namespace spinning_LED
+} // namespace menu
 
 /*
 	********************************
@@ -358,58 +457,71 @@ void start_animation_reaction();
 	Local variables
 */
 bool react;
+bool cheat;
+bool button_states[6];
 
 void game_reaction_time()
 {
+  clear_buttons(button_states, 6);
   while (true)
   {
-    bool button_states[6] = {0, 0, 0, 0, 0, 0};
-    read_buttons(button_states, 6);
-    if (button_states[BLACK])
-      return;
-    react = false;
     start_animation_reaction();
+    read_buttons(button_states, 6);
+    react = false;
+    cheat = false;
     game_ended = false;
-    delay(random(7000) + 3000);
-    for (byte i = 0; i < 6; ++i)
-    {
-      if (button_states[i])
-      {
-        blink_all(10, 100, i);
-        react = true;
-        break;
-      }
-    }
-    set_all_to_color(medium_white_c);
-    while (!react)
+    unsigned long del = millis() + random(10000);
+    while (millis() < del && !cheat)
     {
       read_buttons(button_states, 6);
       if (button_states[BLACK])
+      {
         return;
-      for (byte i = 0; i < 6; ++i)
+      }
+      for (byte i = 0; i < 4; ++i)
       {
         if (button_states[i])
         {
-          react = true;
-          set_all_to(i);
+          cheat = true;
+          blink_all(10, 100, i);
         }
       }
+      clear_buttons(button_states, 6);
     }
-    delay(2000);
-    clear_buttons(button_states, 6);
-    bool again = false;
-    while (!again)
+    if (!cheat)
     {
-      read_buttons(button_states, 6);
-      if (button_states[BLACK])
-        return;
-      for (byte i = 0; i < 6; ++i)
+      set_all_to_color(medium_white_c);
+      while (!react)
       {
-        if (button_states[i] != 0)
+        read_buttons(button_states, 6);
+        if (button_states[BLACK])
+          return;
+        for (byte i = 0; i < 6; ++i)
         {
-          again = true;
+          if (button_states[i])
+          {
+            react = true;
+            set_all_to(i);
+          }
         }
       }
+      delay(1000);
+      clear_buttons(button_states, 6);
+      bool again = false;
+      while (!again)
+      {
+        read_buttons(button_states, 6);
+        if (button_states[BLACK])
+          return;
+        for (byte i = 0; i < 6; ++i)
+        {
+          if (button_states[i] != 0)
+          {
+            again = true;
+          }
+        }
+      }
+      clear_buttons(button_states, 6);
     }
   }
 }
@@ -418,17 +530,14 @@ void start_animation_reaction()
 {
   for (byte i = 0; i < LEDs; ++i)
   {
-    strip.setPixelColor(i, low_white_c);
-    strip.show();
-    delay(600 / 30);
+    set_one_to_color(i, low_white_c);
+    delay(10);
   }
 
-  for (byte i = 200; i > 0; i -= 10)
+  for (char i = LEDs; i >= 0; --i)
   {
-    set_all_to_color(low_white_c);
-    delay(i);
-    set_all_off();
-    delay(i);
+    set_one_to_color(i, off_c);
+    delay(10);
   }
 }
 } // namespace reaction_time
@@ -459,9 +568,8 @@ void game_memory()
   set_all_off();
   byte round = 3;
   byte color_order[round];
-  for (;round < LEDs - 1; round += 3 )
+  for (; round < LEDs - 1; round += 3)
   {
-    Serial.println("Setting up memory");
     game_ended = false;
     for (byte i = 0; i < round; ++i)
     {
@@ -470,18 +578,11 @@ void game_memory()
       color_order[i] = rand;
       strip.show();
     }
-    Serial.print("Delaying for ");
-    Serial.print(showing_time / 1000);
-    Serial.println(" seconds before turning off");
-    delay(showing_time + round*00);
+    delay(showing_time + round * 00);
     set_all_off();
-    Serial.println("Memory setup done");
-    Serial.println("Playing memory");
     byte last_button_pressed = -1;
     for (byte i = 0; i < round; ++i)
     {
-      Serial.print("LED number : ");
-      Serial.println(i);
       bool buttons[6] = {0, 0, 0, 0, 0, 0};
       bool pressed = false;
       while (!pressed)
@@ -491,7 +592,6 @@ void game_memory()
         {
           if (buttons[j])
           {
-            Serial.println(j);
             pressed = true;
             break;
           }
@@ -502,18 +602,9 @@ void game_memory()
         if (buttons[j])
         {
           last_button_pressed = j;
-          Serial.print("Button number : ");
-          Serial.print(j);
-          Serial.println(" was pressed");
           break;
         }
       }
-      /*if (game_ended) {
-      end_game();
-      detachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN));
-      return;
-      }*/
-      Serial.println("Continuing");
       if (color_order[i] == last_button_pressed)
       {
         set_one_to(i, last_button_pressed);
@@ -533,8 +624,9 @@ void game_memory()
 void end_game(byte round)
 {
   blink_all(10, 50, RED);
-  for(byte i = 0; i < round; ++i){
-    if((i+1)%5)
+  for (byte i = 0; i < round; ++i)
+  {
+    if ((i + 1) % 5)
       set_one_to(i, RED);
     else
       set_one_to(i, GREEN);
@@ -562,6 +654,11 @@ void quit()
 }
 } // namespace memory
 
+/*
+	*********************************
+	Pingpong
+	*********************************
+*/
 namespace pingpong
 {
 /*
@@ -572,16 +669,9 @@ void quit();
 void play();
 void end_game();
 void game_won();
-void get_ready(byte);
 
 /*
   Local variables
-*/
-
-/*
-	*********************************
-	Pingpong
-	*********************************
 */
 
 void game_pingpong()
@@ -592,7 +682,6 @@ void game_pingpong()
 
 void setup()
 {
-  Serial.println("Setting up pingpong");
   game_ended = false;
   for (byte i = 0; i < LEDs; ++i)
   {
@@ -601,22 +690,20 @@ void setup()
   }
   blink_all(10, 50, RED);
   set_button_color_zones(15);
-  Serial.println("Pingpong setup done");
 }
 
 void play()
 {
   byte player_start = random(4);
-  get_ready(player_start);
-  byte pos = player_start * 15;
-  byte redlosts = 0;
-  byte greenlosts = 0;
-  byte bluelosts = 0;
-  byte yellowlosts = 0;
+  char pos = player_start * 15;
+  byte redlosses = 0;
+  byte greenlosses = 0;
+  byte bluelosses = 0;
+  byte yellowlosses = 0;
   long delay_ball = 300;
   int dir = 1;
   bool pointlost = false;
-  byte loseonpos = pos + 15;
+  int loseonpos = pos + 15;
   loseonpos = loseonpos > 59 ? loseonpos % 60 : loseonpos;
   loseonpos = loseonpos < 0 ? loseonpos + 60 : loseonpos;
   long stamp;
@@ -634,7 +721,10 @@ void play()
       {
         if (button_objects[pos / 15].wasPressed())
         {
-          dir = pos - ((pos / 15) * 15 - 1 + 8) > 0 ? 1 : -1;
+          if (pos % 15 != 7)
+            dir = pos - ((pos / 15) * 15 - 1 + 8) > 0 ? 1 : -1;
+          else
+            dir = dir > 0 ? -1 : 1;
           delay_ball = abs(pos - ((pos / 15) * 15 - 1 + 8)) * (30 - counter / 8);
           delay_ball = delay_ball < 10 ? 10 : delay_ball;
           loseonpos = dir > 0 ? ((pos / 15 + 2) * 15) : ((pos / 15 - 1) * 15 - 1);
@@ -648,7 +738,7 @@ void play()
       }
       set_one_to_color(pos, oldcolor);
       pos += dir;
-      pos = pos > 0 ? pos : 59;
+      pos = pos >= 0 ? pos : 59;
       pos = pos == 60 ? 0 : pos;
 
       ++counter;
@@ -689,6 +779,21 @@ void play()
           }
           //blink_all(10, 100, RED);
         }
+        switch (pos / 15)
+        {
+        case RED:
+          redlosses += 1;
+          break;
+        case GREEN:
+          greenlosses += 1;
+          break;
+        case BLUE:
+          bluelosses += 1;
+          break;
+        case YELLOW:
+          yellowlosses += 1;
+          break;
+        }
       }
     }
     pointlost = false;
@@ -701,48 +806,9 @@ void play()
   }
 }
 
-void get_ready(byte player_start)
-{
-  Serial.println("Get ready for pingpong!");
-  delay(2000);
-  String player_color;
-  switch (player_start)
-  {
-  case 0:
-    player_color = "red";
-    break;
-  case 1:
-    player_color = "green";
-    break;
-  case 2:
-    player_color = "blue";
-    break;
-  case 3:
-    player_color = "yellow";
-    break;
-  default:
-    player_color = "";
-    break;
-  }
-  Serial.print("The ");
-  Serial.print(player_color);
-  Serial.print(" player serves");
-}
-
 void end_game()
 {
   blink_all(10, 50, RED);
-}
-
-void game_won()
-{
-  set_all_off();
-  for (byte i = 0; i < LEDs; ++i)
-  {
-    set_one_to(i, GREEN);
-    delay(1000 / 60);
-  }
-  blink_all(3, 1000, GREEN);
 }
 
 void quit()
@@ -758,15 +824,14 @@ void quit()
 */
 
 using namespace reaction_time;
-using namespace spinning_LED;
 using namespace memory;
 using namespace pingpong;
 
-// The setup() function runs once each time the micro-controller starts
 void setup()
 {
   Serial.begin(115200);
-
+  lcd.init();
+  lcd.backlight();
   pinMode(A0, INPUT_PULLUP);
   pinMode(A1, INPUT_PULLUP);
   pinMode(A2, INPUT_PULLUP);
@@ -791,109 +856,26 @@ void setup()
     delay(5);
     strip.show();
   }
-  blink_all(1, 400, RED);
-  blink_all(1, 400, GREEN);
-  blink_all(1, 400, BLUE);
+  blink_all(1, 100, RED);
+  blink_all(1, 100, GREEN);
+  blink_all(1, 100, BLUE);
 }
 
-/*
-  void setup() {
-  strip = Adafruit_NeoPixel(LEDs, PIXEL_PIN, NEO_GRBW + NEO_KHZ800);
-  // This is for Trinket 5V 16MHz, you can remove these three lines if you are not using a Trinket
-  #if defined (__AVR_ATtiny85__)
-    if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
-  #endif
-  // End of trinket special code
-  strip.setBrightness(50);
-  strip.begin();
-  strip.show(); // Initialize all pixels to 'off'
-  set_all_to(1);
-  }*/
-
-// Add the main program code into the continuous loop() function
 void loop()
 {
-  bool buttons[6] = {0, 0, 0, 0, 0, 0};
-  bool menu_buttons[4] = {0, 0, 0, 0};
-  blink_all(5, 200, GREEN);
-  uint16_t snake_counter = 0;
-  while (true)
+  switch (menu::main_menu())
   {
-    random(10);
-    if (snake_counter % 10 == 0)
-    {
-      for (byte i = 0; i < 10; ++i)
-      {
-        strip.setPixelColor((snake_counter / 10 + i) % LEDs, i * 1, i * 1, i * 1);
-      }
-    }
-    ++snake_counter;
-    strip.show();
-    read_buttons(buttons, 6);
-    for (byte i = 0; i < 6; ++i)
-    {
-      if (buttons[i])
-      {
-        clear_buttons(buttons, 6);
-        switch (i)
-        {
-        case 0:
-          memory::game_memory();
-          break;
-        case 1:
-          reaction_time::game_reaction_time();
-          break;
-        case 2:
-          pingpong::game_pingpong();
-          break;
-        case 3:
-          //spinning_LED::game_spinning_LED();
-          break;
-        }
-        blink_all(5, 200, GREEN);
-      }
-      read_menu_buttons(menu_buttons, 4);
-      for (byte i = 0; i < 4; ++i)
-      {
-        if (menu_buttons[i])
-        {
-          clear_menu_buttons(menu_buttons, 4);
-          switch (i)
-          {
-          case UP:
-            color_intensity += 3;
-            if (color_intensity > 255)
-            {
-              color_intensity = 255;
-            }
-            red_c = strip.Color(color_intensity, 0, 0);
-            blue_c = strip.Color(0, color_intensity, 0);
-            green_c = strip.Color(0, 0, color_intensity);
-            yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
-            Serial.println("UP");
-            Serial.println(color_intensity);
-            set_button_color_zones(0);
-            break;
-          case DOWN:
-            color_intensity -= 3;
-            if (color_intensity < 1)
-            {
-              color_intensity = 2;
-            }
-            red_c = strip.Color(color_intensity, 0, 0);
-            blue_c = strip.Color(0, color_intensity, 0);
-            green_c = strip.Color(0, 0, color_intensity);
-            yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
-            Serial.println(color_intensity);
-            set_button_color_zones(0);
-            break;
-          case LEFT:
-            break;
-          case RIGHT:
-            break;
-          }
-        }
-      }
-    }
+  case 0:
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Playing: Memory");
+    memory::game_memory();
+    break;
+  case 1:
+    reaction_time::game_reaction_time();
+    break;
+  case 2:
+    pingpong::game_pingpong();
+    break;
   }
 }
