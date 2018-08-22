@@ -285,31 +285,32 @@ String games[amount_of_games] = {"       Memory",
                                  "      Reaction",
                                  "      Pingpong",
                                  "   Throw the bomb"};
+String stars = "     **********     ";
 
 void repaint_main(short row)
 {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("     **********     ");
+  lcd.print(stars);
   lcd.setCursor(0, 1);
   lcd.print("     Main menu");
   lcd.setCursor(0, 2);
   lcd.print(main[row]);
   lcd.setCursor(0, 3);
-  lcd.print("     **********     ");
+  lcd.print(stars);
 }
 
 void repaint_games(short row)
 {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("     **********     ");
+  lcd.print(stars);
   lcd.setCursor(0, 1);
   lcd.print("     Games menu");
   lcd.setCursor(0, 2);
   lcd.print(games[row]);
   lcd.setCursor(0, 3);
-  lcd.print("     **********     ");
+  lcd.print(stars);
 }
 
 void repaint_brightness()
@@ -887,7 +888,7 @@ void setup()
   set_all_off();
   Serial.println("Throw the bomb!");
   bomb_count = random(11, 20);
-  
+
   //Light up edges of player areas
   set_one_to_color(0, red_c);
   set_one_to_color(14, red_c);
@@ -926,22 +927,21 @@ void write_message(String message, int player_number)
 
 void play()
 {
-  int current_player = random(4);
-  write_message("Your turn ", current_player);
+  byte current_player = random(4);
+  //write_message("Your turn ", current_player);
 
   //Start light at next player's first LED
-  int pos = (current_player + 1) * 15;
-  int dir = 1;
+  short pos = (current_player + 1) * 15;
+  short dir = 1;
   uint32_t old_color;
 
   Serial.print("Bomb count: ");
   Serial.print(bomb_count);
-
   while (!game_ended)
   {
     old_color = strip.getPixelColor(pos);
     set_one_to_color(pos, medium_white_c);
-
+    delay(500);
     if (button_objects[current_player].wasPressed())
     {
       //If pos is in upper half of range, remove 2 from count otherwise remove 1
@@ -961,7 +961,7 @@ void play()
       {
         game_ended = true;
         blink_all(3, 1000, RED);
-        write_message("You lost ", current_player);
+        //write_message("You lost ", current_player);
       }
       else
       {
