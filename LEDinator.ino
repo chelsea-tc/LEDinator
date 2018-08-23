@@ -885,7 +885,11 @@ void game_throw_the_bomb()
 
 void setup()
 {
+  //Reset
   set_all_off();
+  lcd.clear();
+  game_ended = false;
+
   Serial.println("Throw the bomb!");
   bomb_count = random(11, 20);
 
@@ -898,6 +902,12 @@ void setup()
   set_one_to_color(44, blue_c);
   set_one_to_color(45, yellow_c);
   set_one_to_color(59, yellow_c);
+
+  //Turn on center lights in corresponding color
+  for(int i=0; i<4; ++i)
+  {
+    set_one_to(7+i*15, i);
+  }
   delay(2000);
 }
 
@@ -931,42 +941,56 @@ void play()
   //write_message("Your turn ", current_player);
 
   //Start light at next player's first LED
-  short pos = (current_player + 1) * 15;
+  short pos = current_player * 15;
   short dir = 1;
-  uint32_t old_color;
+  unsigned short del = 10;
+  bool pressed = false;
+  uint32_t old_color = strip.getPixelColor(pos);
 
   Serial.print("Bomb count: ");
-  Serial.print(bomb_count);
+  Serial.print(bomb_count); //to remove
   while (!game_ended)
   {
     old_color = strip.getPixelColor(pos);
     set_one_to_color(pos, medium_white_c);
-    delay(500);
-    if (button_objects[current_player].wasPressed())
+
+    unsigned long stamp = millis();
+    while ( stamp + del > millis() )
     {
+      if(button_objects[BLACK].wasPressed()) return;
+      if(button_objects[current_player].wasPressed())
+        pressed = true;
+    }
+
+    if (pressed)
+    {
+      pressed = false;
       //If pos is in upper half of range, remove 2 from count otherwise remove 1
-      bomb_count -= ((pos % 15) > 8) ? 2 : 1;
-
-      //Change current player to next one to press their button and move LED pos to next player's first LED
-      //E.G. Yellow(3) presses their button on Red(0) 6th LED, => current_player changes to Red, which turns off Yellow's center LED and turns on Red's center LED. 1 is removed from bomb_count and the LED pos moves to Green's first LED
-      int last_player = current_player;
-      current_player = (current_player == 3) ? 0 : current_player + 1;
-      pos = (current_player == 3) ? 0 : (current_player + 1) * 15;
-
-      //turn off center light for last player and turn on center light for new player
-      set_one_to_color(7 + last_player * 15, off_c);
-      set_one_to(7 + current_player * 15, current_player);
+      bomb_count -= (pos % 15 == 7) ? bomb_count : ((pos % 15) > 8) ? 2 : 1;
 
       if (bomb_count <= 0)
       {
         game_ended = true;
-        blink_all(3, 1000, RED);
-        //write_message("You lost ", current_player);
+        lcd.clear();
+        lcd.setCursor(7, 1);
+        lcd.print("BOOM!");
+        blink_all(3, 1000, current_player);
       }
       else
       {
+        lcd.clear();
+        lcd.setCursor(9, 2);
+        lcd.print(bomb_count);
+
         Serial.print("Bomb count: ");
-        Serial.print(bomb_count);
+        Serial.println(bomb_count);
+
+        //Change current player to next one to press their button and move LED pos to next player's first LED
+        current_player = ++current_player % 4;
+
+        set_one_to_color(pos, old_color);
+        pos = current_player * 15;
+        old_color = strip.getPixelColor(pos);
       }
     }
 
@@ -1033,6 +1057,7 @@ void setup()
 
 void loop()
 {
+  random(10);
   switch (menu::main_menu())
   {
   case 0:
