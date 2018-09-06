@@ -280,35 +280,37 @@ short column = 0;
 const byte amount_of_main = 2;
 String main[amount_of_main] = {"       Games",
                                "     Brightness"};
-const byte amount_of_games = 3;
+const byte amount_of_games = 4;
 String games[amount_of_games] = {"       Memory",
                                  "      Reaction",
-                                 "      Pingpong"};
+                                 "      Pingpong",
+                                 "   Throw the bomb"};
+String stars = "     **********     ";
 
 void repaint_main(short row)
 {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("     **********     ");
+  lcd.print(stars);
   lcd.setCursor(0, 1);
   lcd.print("     Main menu");
   lcd.setCursor(0, 2);
   lcd.print(main[row]);
   lcd.setCursor(0, 3);
-  lcd.print("     **********     ");
+  lcd.print(stars);
 }
 
 void repaint_games(short row)
 {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("     **********     ");
+  lcd.print(stars);
   lcd.setCursor(0, 1);
   lcd.print("     Games menu");
   lcd.setCursor(0, 2);
   lcd.print(games[row]);
   lcd.setCursor(0, 3);
-  lcd.print("     **********     ");
+  lcd.print(stars);
 }
 
 void repaint_brightness()
@@ -856,6 +858,160 @@ void quit()
 } // namespace pingpong
 
 /*
+  ********************************
+  Throw the bomb
+  ********************************
+*/
+namespace throw_the_bomb
+{
+/*
+  Local functions
+*/
+void setup();
+void write_message(String, int);
+void play();
+
+/*
+  Local variables
+*/
+int bomb_count;
+String player_color = "";
+
+void game_throw_the_bomb()
+{
+  setup();
+  play();
+}
+
+void setup()
+{
+  //Reset
+  set_all_off();
+  lcd.clear();
+  game_ended = false;
+
+  Serial.println("Throw the bomb!");
+  bomb_count = random(11, 20);
+
+  //Light up edges of player areas
+  set_one_to_color(0, red_c);
+  set_one_to_color(14, red_c);
+  set_one_to_color(15, green_c);
+  set_one_to_color(29, green_c);
+  set_one_to_color(30, blue_c);
+  set_one_to_color(44, blue_c);
+  set_one_to_color(45, yellow_c);
+  set_one_to_color(59, yellow_c);
+
+  //Turn on center lights in corresponding color
+  for(int i=0; i<4; ++i)
+  {
+    set_one_to(7+i*15, i);
+  }
+  delay(2000);
+}
+
+void write_message(String message, int player_number)
+{
+  switch (player_number)
+  {
+  case 0:
+    player_color = "red";
+    break;
+  case 1:
+    player_color = "green";
+    break;
+  case 2:
+    player_color = "blue";
+    break;
+  case 3:
+    player_color = "yellow";
+    break;
+  default:
+    player_color = "";
+    break;
+  }
+  Serial.print(message);
+  Serial.print(player_color);
+}
+
+void play()
+{
+  byte current_player = random(4);
+  //write_message("Your turn ", current_player);
+
+  //Start light at next player's first LED
+  short pos = current_player * 15;
+  short dir = 1;
+  unsigned short del = 10;
+  bool pressed = false;
+  uint32_t old_color = strip.getPixelColor(pos);
+
+  Serial.print("Bomb count: ");
+  Serial.print(bomb_count); //to remove
+  while (!game_ended)
+  {
+    old_color = strip.getPixelColor(pos);
+    set_one_to_color(pos, medium_white_c);
+
+    unsigned long stamp = millis();
+    while ( stamp + del > millis() )
+    {
+      if(button_objects[BLACK].wasPressed()) return;
+      if(button_objects[current_player].wasPressed())
+        pressed = true;
+    }
+
+    if (pressed)
+    {
+      pressed = false;
+      //If pos is in upper half of range, remove 2 from count otherwise remove 1
+      bomb_count -= (pos % 15 == 7) ? bomb_count : ((pos % 15) > 8) ? 2 : 1;
+
+      if (bomb_count <= 0)
+      {
+        game_ended = true;
+        lcd.clear();
+        lcd.setCursor(7, 1);
+        lcd.print("BOOM!");
+        blink_all(3, 1000, current_player);
+      }
+      else
+      {
+        lcd.clear();
+        lcd.setCursor(9, 2);
+        lcd.print(bomb_count);
+
+        Serial.print("Bomb count: ");
+        Serial.println(bomb_count);
+
+        //Change current player to next one to press their button and move LED pos to next player's first LED
+        current_player = ++current_player % 4;
+
+        set_one_to_color(pos, old_color);
+        pos = current_player * 15;
+        old_color = strip.getPixelColor(pos);
+      }
+    }
+
+    //Position should move forwards and backwards in next player's area
+    //move position and reset LED
+    if (pos % 15 == 0)
+    {
+      dir = 1;
+    }
+    else if (pos % 15 == 14)
+    {
+      dir = -1;
+    }
+
+    set_one_to_color(pos, old_color);
+    pos += dir;
+  }
+}
+} // namespace throw_the_bomb
+
+/*
 	*********************************
 	The main code
 	*********************************
@@ -901,6 +1057,7 @@ void setup()
 
 void loop()
 {
+  random(10);
   switch (menu::main_menu())
   {
   case 0:
@@ -911,6 +1068,9 @@ void loop()
     break;
   case 2:
     pingpong::game_pingpong();
+    break;
+  case 3:
+    throw_the_bomb::game_throw_the_bomb();
     break;
   }
 }
