@@ -8,12 +8,11 @@
 #include "Adafruit_NeoPixel.h"
 #include "GFButton.h"
 #include "LiquidCrystal_I2C.h"
+#include "Buttonhandler.h"
 
 /*
 	PIN defines
 */
-const byte BUTTONS[6] = {4, 5, 6, 7, 8, 9};
-const byte MENU_BUTTONS[4] = {A0, A1, A2, A3};
 const byte LEDs = 60;
 const byte PIXEL_PIN = 10, INTERRUPT_PIN = 2;
 
@@ -23,24 +22,14 @@ const byte PIXEL_PIN = 10, INTERRUPT_PIN = 2;
 bool game_ended;
 
 /*
+  Buttons
+*/
+Buttonhandler buttons;
+
+/*
   The LCD
 */
 LiquidCrystal_I2C lcd(0x27, 20, 4);
-
-// Create two button instances on pins 2 & 3
-GFButton buttonRed(4);
-GFButton buttonGreen(5);
-GFButton buttonBlue(6);
-GFButton buttonYellow(7);
-GFButton buttonWhite(8);
-GFButton buttonBlack(9);
-GFButton buttonUp(A0);
-GFButton buttonLeft(A1);
-GFButton buttonDown(A2);
-GFButton buttonRight(A3);
-
-GFButton button_objects[6] = {buttonRed, buttonGreen, buttonBlue, buttonYellow, buttonWhite, buttonBlack};
-GFButton menu_button_objects[4] = {buttonUp, buttonLeft, buttonDown, buttonRight};
 
 /*
 	Setting the strip
@@ -60,77 +49,6 @@ volatile uint32_t low_white_c;
 volatile uint32_t medium_white_c;
 volatile uint32_t high_white_c;
 volatile uint32_t off_c;
-/*
-******************************************
-  Reading buttons
-******************************************
-*/
-
-void read_buttons(volatile bool *buttons, byte amount)
-{
-  for (byte i = 0; i < amount; ++i)
-  {
-    if (button_objects[i].wasPressed())
-    {
-      buttons[i] = true;
-    }
-  }
-}
-
-void read_menu_buttons(volatile bool *buttons, byte amount)
-{
-  for (byte i = 0; i < amount; ++i)
-  {
-    if (menu_button_objects[i].wasPressed())
-    {
-      buttons[i] = true;
-    }
-  }
-}
-
-void read_held_buttons(volatile bool *buttons, byte amount)
-{
-  for (byte i = 0; i < amount; ++i)
-  {
-    if (button_objects[i].isPressed())
-    {
-      buttons[i] = true;
-    }
-  }
-}
-
-byte get_last_pressed_menu_button(bool *menu_buttons)
-{
-  read_menu_buttons(menu_buttons, 4);
-  for (short i = 0; i < 4; ++i)
-  {
-    if (menu_buttons[i])
-    {
-      clear_buttons(menu_buttons, 4);
-      return i;
-    }
-  }
-  return -1;
-}
-
-void read_held_menu_buttons(volatile bool *buttons, byte amount)
-{
-  for (byte i = 0; i < amount; ++i)
-  {
-    if (menu_button_objects[i].isPressed())
-    {
-      buttons[i] = true;
-    }
-  }
-}
-
-void clear_buttons(volatile bool *buttons, byte amount)
-{
-  for (byte i = 0; i < amount; ++i)
-  {
-    buttons[i] = false;
-  }
-}
 
 /*
 ******************************************
@@ -334,7 +252,7 @@ short main_menu()
   {
     set_all_off();
 
-    switch (get_last_pressed_menu_button(menu_buttons))
+    switch (buttons.get_last_pressed_menu_button(menu_buttons))
     {
     case UP:
       if (row > 0)
@@ -372,7 +290,7 @@ short games_menu()
   {
     set_all_off();
 
-    switch (get_last_pressed_menu_button(menu_buttons))
+    switch (buttons.get_last_pressed_menu_button(menu_buttons))
     {
     case UP:
       if (row > 0)
@@ -399,12 +317,12 @@ void brightness_menu()
   repaint_brightness();
   while (true)
   {
-    read_held_menu_buttons(menu_buttons, 4);
+    buttons.read_held_menu_buttons(menu_buttons, 4);
     for (byte i = 0; i < 4; ++i)
     {
       if (menu_buttons[i])
       {
-        clear_buttons(menu_buttons, 4);
+        buttons.clear_buttons(menu_buttons, 4);
         switch (i)
         {
         case UP:
@@ -465,18 +383,18 @@ bool button_states[6];
 
 void game_reaction_time()
 {
-  clear_buttons(button_states, 6);
+  buttons.clear_buttons(button_states, 6);
   while (true)
   {
     start_animation_reaction();
-    read_buttons(button_states, 6);
+    buttons.read_buttons(button_states, 6);
     react = false;
     cheat = false;
     game_ended = false;
     unsigned long del = millis() + random(10000);
     while (millis() < del && !cheat)
     {
-      read_buttons(button_states, 6);
+      buttons.read_buttons(button_states, 6);
       if (button_states[BLACK])
       {
         return;
@@ -489,14 +407,14 @@ void game_reaction_time()
           blink_all(10, 100, i);
         }
       }
-      clear_buttons(button_states, 6);
+      buttons.clear_buttons(button_states, 6);
     }
     if (!cheat)
     {
       set_all_to_color(medium_white_c);
       while (!react)
       {
-        read_buttons(button_states, 6);
+        buttons.read_buttons(button_states, 6);
         if (button_states[BLACK])
           return;
         for (byte i = 0; i < 6; ++i)
@@ -509,11 +427,11 @@ void game_reaction_time()
         }
       }
       delay(1000);
-      clear_buttons(button_states, 6);
+      buttons.clear_buttons(button_states, 6);
       bool again = false;
       while (!again)
       {
-        read_buttons(button_states, 6);
+        buttons.read_buttons(button_states, 6);
         if (button_states[BLACK])
           return;
         for (byte i = 0; i < 6; ++i)
@@ -524,7 +442,7 @@ void game_reaction_time()
           }
         }
       }
-      clear_buttons(button_states, 6);
+      buttons.clear_buttons(button_states, 6);
     }
   }
 }
@@ -602,14 +520,14 @@ void game_memory()
     short last_button_pressed = -1;
     for (byte i = 0; i < round; ++i)
     {
-      bool buttons[6] = {0, 0, 0, 0, 0, 0};
+      bool button_array[6] = {0, 0, 0, 0, 0, 0};
       bool pressed = false;
       while (!pressed)
       {
-        read_buttons(buttons, 6);
+        buttons.read_buttons(button_array, 6);
         for (byte j = 0; j < 6; ++j)
         {
-          if (buttons[j])
+          if (button_array[j])
           {
             Serial.println(j);
             pressed = true;
@@ -619,7 +537,7 @@ void game_memory()
       }
       for (byte j = 0; true; j = (j + 1) % 6)
       {
-        if (buttons[j])
+        if (button_array[j])
         {
           last_button_pressed = j;
           break;
@@ -628,7 +546,7 @@ void game_memory()
       if (color_order[i] == last_button_pressed)
       {
         set_one_to(i, last_button_pressed);
-        clear_buttons(buttons, 6);
+        buttons.clear_buttons(button_array, 6);
       }
       else
       {
@@ -729,6 +647,7 @@ void play()
   int dir = 1;
   bool pointlost = false;
   int loseonpos = pos + 15;
+  bool button_array[] = {0, 0, 0, 0, 0, 0};
   loseonpos = loseonpos > 59 ? loseonpos % 60 : loseonpos;
   loseonpos = loseonpos < 0 ? loseonpos + 60 : loseonpos;
   long stamp;
@@ -745,8 +664,10 @@ void play()
       stamp = millis();
       while (stamp + delay_ball > millis())
       {
-        if (button_objects[pos / 15].wasPressed())
+        buttons.read_buttons(button_array, 6);
+        if (button_array[pos / 15])
         {
+          buttons.clear_buttons(button_array, 4);
           if (pos % 15 != 7)
             dir = pos - ((pos / 15) * 15 - 1 + 8) > 0 ? 1 : -1;
           else
@@ -757,7 +678,7 @@ void play()
           loseonpos = loseonpos > 59 ? loseonpos % 60 : loseonpos;
           loseonpos = loseonpos < 0 ? loseonpos + 60 : loseonpos;
         }
-        if (button_objects[BLACK].wasPressed())
+        if (button_array[BLACK])
         {
           return;
         }
@@ -904,35 +825,11 @@ void setup()
   set_one_to_color(59, yellow_c);
 
   //Turn on center lights in corresponding color
-  for(int i=0; i<4; ++i)
+  for (int i = 0; i < 4; ++i)
   {
-    set_one_to(7+i*15, i);
+    set_one_to(7 + i * 15, i);
   }
   delay(2000);
-}
-
-void write_message(String message, int player_number)
-{
-  switch (player_number)
-  {
-  case 0:
-    player_color = "red";
-    break;
-  case 1:
-    player_color = "green";
-    break;
-  case 2:
-    player_color = "blue";
-    break;
-  case 3:
-    player_color = "yellow";
-    break;
-  default:
-    player_color = "";
-    break;
-  }
-  Serial.print(message);
-  Serial.print(player_color);
 }
 
 void play()
@@ -944,7 +841,9 @@ void play()
   short pos = current_player * 15;
   short dir = 1;
   unsigned short del = 10;
+  unsigned long stamp = 0;
   bool pressed = false;
+  bool button_array[] = {0, 0, 0, 0, 0, 0};
   uint32_t old_color = strip.getPixelColor(pos);
 
   Serial.print("Bomb count: ");
@@ -954,12 +853,25 @@ void play()
     old_color = strip.getPixelColor(pos);
     set_one_to_color(pos, medium_white_c);
 
-    unsigned long stamp = millis();
-    while ( stamp + del > millis() )
+    stamp = millis();
+    /*
+    if (bomb_count > 5)
+      del = 10;
+    else
+      del = bomb_count * 2;
+    */
+   del = bomb_count + 2;
+    while (stamp + del > millis())
     {
-      if(button_objects[BLACK].wasPressed()) return;
-      if(button_objects[current_player].wasPressed())
+      buttons.read_buttons(button_array, 6);
+      if (button_array[BLACK])
+        return;
+      if (button_array[current_player])
+      {
         pressed = true;
+        buttons.clear_buttons(button_array, 6);
+        break;
+      }
     }
 
     if (pressed)
@@ -967,7 +879,8 @@ void play()
       pressed = false;
       //If pos is in upper half of range, remove 2 from count otherwise remove 1
       bomb_count -= (pos % 15 == 7) ? bomb_count : ((pos % 15) > 8) ? 2 : 1;
-
+      if(pos%15 == 7)
+        bomb_count = 0;
       if (bomb_count <= 0)
       {
         game_ended = true;
@@ -1016,10 +929,6 @@ void play()
 	The main code
 	*********************************
 */
-
-using namespace reaction_time;
-using namespace memory;
-using namespace pingpong;
 
 void setup()
 {

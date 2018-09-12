@@ -1,3 +1,8 @@
+TODO:
+Line marked with - is to be implemented
+Line marked with * is under development
+Line marked with | is finished
+
 - Clean up and implement classes
     - ButtonHandler
     - Display
@@ -6,7 +11,7 @@
 
 - Keep making games
     - Pingpong
-        - Keep track of scoring or lives
+        | Keep track of scoring or lives
         - If one dies you could get a bigger part of the board
     - Riding solo (proper drinking/social game)
         - Description:

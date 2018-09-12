@@ -3,6 +3,7 @@
         "__hash_table": "cpp",
         "__tree": "cpp",
         "list": "cpp",
-        "slist": "cpp"
+        "slist": "cpp",
+        "cstddef": "cpp"
     }
 }

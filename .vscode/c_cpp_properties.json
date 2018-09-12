@@ -3,13 +3,15 @@
         {
             "name": "Win32",
             "includePath": [
-                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\cores\\arduino"
+                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\cores\\arduino",
+                "${workspaceRoot}"
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": false,
                 "path": [
                     "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\cores\\arduino",
-                    "C:\\Users\\Felix\\Documents\\Arduino\\libraries"
+                    "C:\\Users\\Felix\\Documents\\Arduino\\libraries",
+                    "${workspaceRoot}"
                 ]
             },
             "intelliSenseMode": "msvc-x64",
