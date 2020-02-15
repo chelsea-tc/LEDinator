@@ -69,20 +69,20 @@ void set_all_to(const byte &color)
 {
   switch (color)
   {
-  case RED:
-    set_all_to_color(red_c);
-    break;
-  case GREEN:
-    set_all_to_color(green_c);
-    break;
-  case BLUE:
-    set_all_to_color(blue_c);
-    break;
-  case YELLOW:
-    set_all_to_color(yellow_c);
-    break;
-  default:
-    break;
+    case RED:
+      set_all_to_color(red_c);
+      break;
+    case GREEN:
+      set_all_to_color(green_c);
+      break;
+    case BLUE:
+      set_all_to_color(blue_c);
+      break;
+    case YELLOW:
+      set_all_to_color(yellow_c);
+      break;
+    default:
+      break;
   }
   strip.show();
 }
@@ -102,26 +102,26 @@ void set_one_to(byte i, const byte &color)
 {
   switch (color)
   {
-  case RED:
-    set_one_to_color(i, red_c);
-    break;
-  case GREEN:
-    set_one_to_color(i, green_c);
-    break;
-  case BLUE:
-    set_one_to_color(i, blue_c);
-    break;
-  case YELLOW:
-    set_one_to_color(i, yellow_c);
-    break;
-  case BLACK:
-    set_one_to_color(i, off_c);
-    break;
-  case WHITE:
-    set_one_to_color(i, medium_white_c);
-    break;
-  default:
-    break;
+    case RED:
+      set_one_to_color(i, red_c);
+      break;
+    case GREEN:
+      set_one_to_color(i, green_c);
+      break;
+    case BLUE:
+      set_one_to_color(i, blue_c);
+      break;
+    case YELLOW:
+      set_one_to_color(i, yellow_c);
+      break;
+    case BLACK:
+      set_one_to_color(i, off_c);
+      break;
+    case WHITE:
+      set_one_to_color(i, medium_white_c);
+      break;
+    default:
+      break;
   }
 }
 
@@ -142,20 +142,20 @@ void blink_all(int times, int delay_time, const byte &color)
   {
     switch (color)
     {
-    case RED:
-      set_all_to_color(red_c);
-      break;
-    case GREEN:
-      set_all_to_color(green_c);
-      break;
-    case BLUE:
-      set_all_to_color(blue_c);
-      break;
-    case YELLOW:
-      set_all_to_color(yellow_c);
-      break;
-    default:
-      break;
+      case RED:
+        set_all_to_color(red_c);
+        break;
+      case GREEN:
+        set_all_to_color(green_c);
+        break;
+      case BLUE:
+        set_all_to_color(blue_c);
+        break;
+      case YELLOW:
+        set_all_to_color(yellow_c);
+        break;
+      default:
+        break;
     }
     delay(delay_time / 2);
     set_all_off();
@@ -171,6 +171,7 @@ void set_button_color_zones(int delay_time)
     delay(delay_time);
   }
 }
+
 
 /*
 	*********************************
@@ -197,12 +198,15 @@ short row = 0;
 short column = 0;
 const byte amount_of_main = 2;
 String main[amount_of_main] = {"       Games",
-                               "     Brightness"};
-const byte amount_of_games = 4;
+                               "     Brightness"
+                              };
+const byte amount_of_games = 5;
 String games[amount_of_games] = {"       Memory",
                                  "      Reaction",
                                  "      Pingpong",
-                                 "   Throw the bomb"};
+                                 "   Throw the bomb",
+                                 "       Chaser"
+                                };
 String stars = "     **********     ";
 
 void repaint_main(short row)
@@ -254,30 +258,30 @@ short main_menu()
 
     switch (buttons.get_last_pressed_menu_button(menu_buttons))
     {
-    case UP:
-      if (row > 0)
-        row -= 1;
-      repaint_main(row);
-      break;
-    case DOWN:
-      if (row < amount_of_main - 1)
-        row += 1;
-      repaint_main(row);
-      break;
-    case LEFT:
-      break;
-    case RIGHT:
-      switch (row)
-      {
-      case 0:
-        return games_menu();
-        break;
-      case 1:
-        brightness_menu();
+      case UP:
+        if (row > 0)
+          row -= 1;
         repaint_main(row);
         break;
-      }
-      break;
+      case DOWN:
+        if (row < amount_of_main - 1)
+          row += 1;
+        repaint_main(row);
+        break;
+      case LEFT:
+        break;
+      case RIGHT:
+        switch (row)
+        {
+          case 0:
+            return games_menu();
+            break;
+          case 1:
+            brightness_menu();
+            repaint_main(row);
+            break;
+        }
+        break;
     }
   }
 }
@@ -292,22 +296,22 @@ short games_menu()
 
     switch (buttons.get_last_pressed_menu_button(menu_buttons))
     {
-    case UP:
-      if (row > 0)
-        row -= 1;
-      repaint_games(row);
-      break;
-    case DOWN:
-      if (row < amount_of_games - 1)
-        row += 1;
-      repaint_games(row);
-      break;
-    case LEFT:
-      return -1;
-      break;
-    case RIGHT:
-      return row;
-      break;
+      case UP:
+        if (row > 0)
+          row -= 1;
+        repaint_games(row);
+        break;
+      case DOWN:
+        if (row < amount_of_games - 1)
+          row += 1;
+        repaint_games(row);
+        break;
+      case LEFT:
+        return -1;
+        break;
+      case RIGHT:
+        return row;
+        break;
     }
   }
 }
@@ -325,35 +329,35 @@ void brightness_menu()
         buttons.clear_buttons(menu_buttons, 4);
         switch (i)
         {
-        case UP:
-          color_intensity += 2;
-          if (color_intensity > 255)
-          {
-            color_intensity = 255;
-          }
-          red_c = strip.Color(color_intensity, 0, 0);
-          blue_c = strip.Color(0, color_intensity, 0);
-          green_c = strip.Color(0, 0, color_intensity);
-          yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
-          set_button_color_zones(0);
-          break;
-        case DOWN:
-          color_intensity -= 2;
-          if (color_intensity < 1)
-          {
-            color_intensity = 2;
-          }
-          red_c = strip.Color(color_intensity, 0, 0);
-          blue_c = strip.Color(0, color_intensity, 0);
-          green_c = strip.Color(0, 0, color_intensity);
-          yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
-          set_button_color_zones(0);
-          break;
-        case LEFT:
-          return;
-          break;
-        case RIGHT:
-          break;
+          case UP:
+            color_intensity += 2;
+            if (color_intensity > 255)
+            {
+              color_intensity = 255;
+            }
+            red_c = strip.Color(color_intensity, 0, 0);
+            blue_c = strip.Color(0, color_intensity, 0);
+            green_c = strip.Color(0, 0, color_intensity);
+            yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
+            set_button_color_zones(0);
+            break;
+          case DOWN:
+            color_intensity -= 2;
+            if (color_intensity < 1)
+            {
+              color_intensity = 2;
+            }
+            red_c = strip.Color(color_intensity, 0, 0);
+            blue_c = strip.Color(0, color_intensity, 0);
+            green_c = strip.Color(0, 0, color_intensity);
+            yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
+            set_button_color_zones(0);
+            break;
+          case LEFT:
+            return;
+            break;
+          case RIGHT:
+            break;
         }
       }
     }
@@ -727,21 +731,21 @@ void play()
         }
         switch (pos == 0 ? YELLOW : dir < 0 ? (pos + 7) / 15 : (pos - 7) / 15)
         {
-        case RED:
-          redlosses += 1;
-          break;
-        case GREEN:
-          greenlosses += 1;
-          break;
-        case BLUE:
-          bluelosses += 1;
-          break;
-        case YELLOW:
-          yellowlosses += 1;
-          break;
-        default:
-          redlosses += 1;
-          break;
+          case RED:
+            redlosses += 1;
+            break;
+          case GREEN:
+            greenlosses += 1;
+            break;
+          case BLUE:
+            bluelosses += 1;
+            break;
+          case YELLOW:
+            yellowlosses += 1;
+            break;
+          default:
+            redlosses += 1;
+            break;
         }
       }
     }
@@ -855,9 +859,9 @@ void play()
 
     stamp = millis();
     /*
-    if (bomb_count > 5)
+      if (bomb_count > 5)
       del = 10;
-    else
+      else
       del = bomb_count * 2;
     */
     del = bomb_count + 2;
@@ -938,8 +942,10 @@ void play();
 */
 
 bool button_states[6];
-byte lights[4];
+byte currentPos[4];
 byte colors[4];
+bool alive[4];
+byte numberPlayersAlive = 0;
 
 void game_chaser()
 {
@@ -952,48 +958,139 @@ void setup()
   //Reset
   set_all_off();
   lcd.clear();
-
-  Serial.println("Chaser!");
-  lcd.setCursor(0, 1);
-  lcd.print("        Chaser");
-  lights[0] = 8;
-  lights[1] = 23;
-  lights[2] = 38;
-  lights[3] = 52;
+  const short OFFSET = 15;
+  buttons.clear_buttons(button_states, 6);
+  numberPlayersAlive = 0;
+  currentPos[0] = 6;
+  currentPos[1] = OFFSET + 6;
+  currentPos[2] = 2 * OFFSET + 6;
+  currentPos[3] = 3 * OFFSET + 6;
   colors[0] = RED;
   colors[1] = GREEN;
   colors[2] = BLUE;
   colors[3] = YELLOW;
+  alive[0] = false;
+  alive[1] = false;
+  alive[2] = false;
+  alive[3] = false;
+  lcd.print("    Press to join");
+  lcd.setCursor(1, 1);
+  lcd.print("  Select to start");
+  while (buttons.get_last_pressed_menu_button(menu::menu_buttons) != RIGHT) {
+
+    buttons.read_buttons(button_states, 6);
+    for (byte i = 0; i < 4; i++)
+    {
+      if (button_states[i] && !alive[i])
+      {
+        alive[i] = true;
+        numberPlayersAlive++;
+        set_one_to(currentPos[i] + 1, colors[i]);
+      }
+    }
+  }
+  set_all_off();
+
+  if (numberPlayersAlive == 3 || numberPlayersAlive == 2 ) {
+    byte startOffset = random(60);
+    for (byte i = 0; i < 4; i++) {
+      if (!alive[i]) continue;
+      currentPos[i] = startOffset;
+      startOffset += numberPlayersAlive == 3 ? 20 : 30;
+      if (startOffset >= 60) {
+        startOffset -= 60;
+      }
+      set_one_to(currentPos[i], colors[i]);
+    }
+  }
+  for (byte i = 0; i < 4; i++) {
+    Serial.print("Is player alive: ");
+    Serial.println(alive[i]);
+  }
+  Serial.print("After setup, players alive: ");
+  Serial.println(numberPlayersAlive);
+
+  Serial.println("Chaser!");
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print("        Chaser");
+  lcd.clear();
+  delay(2000);
+  lcd.print("        THREE!");
+  delay(1000);
+  lcd.clear();
+  lcd.print("         TWO!");
+  delay(1000);
+  lcd.clear();
+  lcd.print("         ONE!");
+  delay(1000);
+  lcd.clear();
+  lcd.print("        CHASE!");
 }
 
 void play()
 {
-  bool game_running = true;
-  while (game_running)
+  while (numberPlayersAlive > 1)
   {
+    buttons.clear_buttons(button_states, 6);
     buttons.read_buttons(button_states, 6);
     for (byte i = 0; i < 4; i++)
     {
+      if (!alive[i]) continue;
       if (button_states[i])
       {
-        // game_running = true;
-        set_one_to_color(lights[i], colors[i]);
-        lights[i]++;
-        if (lights[i] == 59)
+        currentPos[i]++;
+        if (currentPos[i] == 60)
         {
-          lights[0] = 0;
+          currentPos[i] = 0;
         }
-        //Move light
+        set_one_to(currentPos[i], colors[i]);
+        for (byte j = 0; j < 4; j++) {
+          if (j == i || !alive[j]) continue;
+          if (currentPos[j] == currentPos[i]) {
+            alive[j] = false;
+            numberPlayersAlive--;
+            Serial.print("One killed, players alive: ");
+            Serial.println(numberPlayersAlive);
+            for (byte k = 0; k < 4; k++) {
+              Serial.print("Is player alive: ");
+              Serial.println(alive[k]);
+            }
+          }
+        }
       }
     }
-    buttons.clear_buttons(button_states, 6);
+
+
   }
   lcd.clear();
+  lcd.setCursor(0, 0);
+  byte winner;
+  lcd.print("     Game over!");
+  for (byte i = 0; i < 4; i++) {
+    if (alive[i]) winner = i;
+  }
   lcd.setCursor(0, 1);
-  lcd.print("Game over!");
-} // chaser
+  switch (winner) {
+    case 0:
+      lcd.print("      RED WON!");
+      break;
+    case 1:
+      lcd.print("     GREEN WON!");
+      break;
+    case 2:
+      lcd.print("     BLUE WON!");
+      break;
+    case 3:
+      lcd.print("    YELLOW WON!");
+      break;
+  }
+  delay(5000);
+}
 
 } // namespace chaser
+
+
 /*
 	*********************************
 	The main code
@@ -1002,7 +1099,7 @@ void play()
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(9600);
   lcd.init();
   lcd.backlight();
   pinMode(A0, INPUT_PULLUP);
@@ -1039,20 +1136,20 @@ void loop()
   random(10);
   switch (menu::main_menu())
   {
-  case 0:
-    memory::game_memory();
-    break;
-  case 1:
-    reaction_time::game_reaction_time();
-    break;
-  case 2:
-    pingpong::game_pingpong();
-    break;
-  case 3:
-    throw_the_bomb::game_throw_the_bomb();
-    break;
-  case 4:
-    chaser::game_chaser();
-    break;
+    case 0:
+      memory::game_memory();
+      break;
+    case 1:
+      reaction_time::game_reaction_time();
+      break;
+    case 2:
+      pingpong::game_pingpong();
+      break;
+    case 3:
+      throw_the_bomb::game_throw_the_bomb();
+      break;
+    case 4:
+      chaser::game_chaser();
+      break;
   }
 }
