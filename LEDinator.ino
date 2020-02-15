@@ -860,7 +860,7 @@ void play()
     else
       del = bomb_count * 2;
     */
-   del = bomb_count + 2;
+    del = bomb_count + 2;
     while (stamp + del > millis())
     {
       buttons.read_buttons(button_array, 6);
@@ -879,7 +879,7 @@ void play()
       pressed = false;
       //If pos is in upper half of range, remove 2 from count otherwise remove 1
       bomb_count -= (pos % 15 == 7) ? bomb_count : ((pos % 15) > 8) ? 2 : 1;
-      if(pos%15 == 7)
+      if (pos % 15 == 7)
         bomb_count = 0;
       if (bomb_count <= 0)
       {
@@ -924,6 +924,58 @@ void play()
 }
 } // namespace throw_the_bomb
 
+namespace chaser
+{
+/*
+  Local functions
+*/
+void setup();
+void write_message(String, int);
+void play();
+
+/*
+  Local variables
+*/
+
+bool button_states[6];
+void game_chaser()
+{
+  setup();
+  play();
+}
+
+void setup()
+{
+  //Reset
+  set_all_off();
+  lcd.clear();
+
+  Serial.println("Chaser!");
+  lcd.setCursor(0, 1);
+  lcd.print("        Chaser");
+}
+
+void play()
+{
+  bool game_running = false;
+  while (game_running)
+  {
+    buttons.read_buttons(button_states, 6);
+    for (byte i = 0; i < 4; i++)
+    {
+      if (button_states[i])
+      {
+        game_running = true;
+        //Move light
+      }
+    }
+  }
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print("Game over!");
+} // chaser
+
+} // namespace chaser
 /*
 	*********************************
 	The main code
@@ -980,6 +1032,9 @@ void loop()
     break;
   case 3:
     throw_the_bomb::game_throw_the_bomb();
+    break;
+  case 4:
+    chaser::game_chaser();
     break;
   }
 }
