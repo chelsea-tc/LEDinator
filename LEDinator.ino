@@ -938,6 +938,9 @@ void play();
 */
 
 bool button_states[6];
+byte lights[4];
+byte colors[4];
+
 void game_chaser()
 {
   setup();
@@ -953,11 +956,19 @@ void setup()
   Serial.println("Chaser!");
   lcd.setCursor(0, 1);
   lcd.print("        Chaser");
+  lights[0] = 8;
+  lights[1] = 23;
+  lights[2] = 38;
+  lights[3] = 52;
+  colors[0] = RED;
+  colors[1] = GREEN;
+  colors[2] = BLUE;
+  colors[3] = YELLOW;
 }
 
 void play()
 {
-  bool game_running = false;
+  bool game_running = true;
   while (game_running)
   {
     buttons.read_buttons(button_states, 6);
@@ -965,10 +976,17 @@ void play()
     {
       if (button_states[i])
       {
-        game_running = true;
+        // game_running = true;
+        set_one_to_color(lights[i], colors[i]);
+        lights[i]++;
+        if (lights[i] == 59)
+        {
+          lights[0] = 0;
+        }
         //Move light
       }
     }
+    buttons.clear_buttons(button_states, 6);
   }
   lcd.clear();
   lcd.setCursor(0, 1);
