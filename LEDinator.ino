@@ -201,7 +201,7 @@ String main[amount_of_main] = {"       Games",
 const byte amount_of_games = 4;
 String games[amount_of_games] = {"       Memory",
                                  "      Reaction",
-                                 "      Pingpong",
+                                 "      PingpongZ",
                                  "   Throw the bomb"};
 String stars = "     **********     ";
 
@@ -592,6 +592,13 @@ void quit()
 }
 } // namespace memory
 
+
+/*
+	*********************************
+	
+	*********************************
+*/
+
 /*
 	*********************************
 	Pingpong
@@ -657,19 +664,24 @@ void play()
   {
     set_button_color_zones(15);
     display_score();
+   
     while (!pointlost)
     {
       oldcolor = strip.getPixelColor(pos);
       set_one_to(pos, WHITE);
       stamp = millis();
+   
       while (stamp + delay_ball > millis())
       {
         buttons.read_buttons(button_array, 6);
+   
         if (button_array[pos / 15])
         {
           buttons.clear_buttons(button_array, 4);
+   
           if (pos % 15 != 7)
             dir = pos - ((pos / 15) * 15 - 1 + 8) > 0 ? 1 : -1;
+   
           else
             dir = dir > 0 ? -1 : 1;
           delay_ball = abs(pos - ((pos / 15) * 15 - 1 + 8)) * (30 - counter / 8);
@@ -678,11 +690,13 @@ void play()
           loseonpos = loseonpos > 59 ? loseonpos % 60 : loseonpos;
           loseonpos = loseonpos < 0 ? loseonpos + 60 : loseonpos;
         }
+   
         if (button_array[BLACK])
         {
           return;
         }
       }
+   
       set_one_to_color(pos, oldcolor);
       pos += dir;
       pos = pos >= 0 ? pos : 59;
@@ -944,7 +958,7 @@ void setup()
   red_c = strip.Color(color_intensity, 0, 0);
   blue_c = strip.Color(0, color_intensity, 0);
   green_c = strip.Color(0, 0, color_intensity);
-  yellow_c = strip.Color(color_intensity / 2, 0, color_intensity / 2);
+  yellow_c = strip.Color(color_intensity / 1.5, 0, color_intensity / 1.5);
   low_white_c = strip.Color(LOW_INTENSITY, LOW_INTENSITY, LOW_INTENSITY);
   medium_white_c = strip.Color(MEDIUM_INTENSITY, MEDIUM_INTENSITY, MEDIUM_INTENSITY);
   high_white_c = strip.Color(HIGH_INTENSITY, HIGH_INTENSITY, HIGH_INTENSITY);
